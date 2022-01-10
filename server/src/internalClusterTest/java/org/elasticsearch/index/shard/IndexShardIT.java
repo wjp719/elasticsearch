@@ -646,6 +646,7 @@ public class IndexShardIT extends ESSingleNodeTestCase {
             indexService.mapperService(),
             indexService.similarityService(),
             shard.getEngineFactory(),
+            shard.getCodecServiceFactory(),
             indexService.getIndexEventListener(),
             wrapper,
             indexService.getThreadPool(),

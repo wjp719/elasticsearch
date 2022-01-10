@@ -11,6 +11,7 @@ import org.elasticsearch.env.TestEnvironment;
 import org.elasticsearch.index.IndexModule;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AnalysisRegistry;
+import org.elasticsearch.index.codec.CodecService;
 import org.elasticsearch.index.engine.InternalEngineFactory;
 import org.elasticsearch.indices.TestIndexNameExpressionResolver;
 import org.elasticsearch.test.ESTestCase;
@@ -59,6 +60,7 @@ public class WatcherPluginTests extends ESTestCase {
             indexSettings,
             registry,
             new InternalEngineFactory(),
+            CodecService::new,
             Collections.emptyMap(),
             () -> true,
             TestIndexNameExpressionResolver.newInstance(),

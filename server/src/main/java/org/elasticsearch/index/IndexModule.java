@@ -49,6 +49,7 @@ import org.elasticsearch.indices.IndicesQueryCache;
 import org.elasticsearch.indices.breaker.CircuitBreakerService;
 import org.elasticsearch.indices.fielddata.cache.IndicesFieldDataCache;
 import org.elasticsearch.indices.recovery.RecoveryState;
+import org.elasticsearch.plugins.CodecServicePlugin;
 import org.elasticsearch.plugins.IndexStorePlugin;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.search.aggregations.support.ValuesSourceRegistry;
@@ -139,6 +140,7 @@ public final class IndexModule {
     private final IndexSettings indexSettings;
     private final AnalysisRegistry analysisRegistry;
     private final EngineFactory engineFactory;
+    private final CodecServicePlugin.CodecServiceFactory codecServiceFactory;
     private final SetOnce<Function<IndexService, CheckedFunction<DirectoryReader, DirectoryReader, IOException>>> indexReaderWrapper =
         new SetOnce<>();
     private final Set<IndexEventListener> indexEventListeners = new HashSet<>();
@@ -165,6 +167,7 @@ public final class IndexModule {
         final IndexSettings indexSettings,
         final AnalysisRegistry analysisRegistry,
         final EngineFactory engineFactory,
+        final CodecServicePlugin.CodecServiceFactory codecServiceFactory,
         final Map<String, IndexStorePlugin.DirectoryFactory> directoryFactories,
         final BooleanSupplier allowExpensiveQueries,
         final IndexNameExpressionResolver expressionResolver,
@@ -173,6 +176,7 @@ public final class IndexModule {
         this.indexSettings = indexSettings;
         this.analysisRegistry = analysisRegistry;
         this.engineFactory = Objects.requireNonNull(engineFactory);
+        this.codecServiceFactory = Objects.requireNonNull(codecServiceFactory);
         this.searchOperationListeners.add(new SearchSlowLog(indexSettings));
         this.indexOperationListeners.add(new IndexingSlowLog(indexSettings));
         this.directoryFactories = Collections.unmodifiableMap(directoryFactories);
@@ -470,6 +474,7 @@ public final class IndexModule {
                 shardStoreDeleter,
                 indexAnalyzers,
                 engineFactory,
+                codecServiceFactory,
                 circuitBreakerService,
                 bigArrays,
                 threadPool,

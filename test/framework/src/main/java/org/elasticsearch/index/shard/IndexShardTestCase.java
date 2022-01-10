@@ -41,6 +41,7 @@ import org.elasticsearch.index.MapperTestUtils;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.cache.IndexCache;
 import org.elasticsearch.index.cache.query.DisabledQueryCache;
+import org.elasticsearch.index.codec.CodecService;
 import org.elasticsearch.index.engine.DocIdSeqNoAndSource;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.engine.EngineFactory;
@@ -451,6 +452,7 @@ public abstract class IndexShardTestCase extends ESTestCase {
                 mapperService,
                 similarityService,
                 engineFactory,
+                CodecService::new,
                 indexEventListener,
                 indexReaderWrapper,
                 threadPool,

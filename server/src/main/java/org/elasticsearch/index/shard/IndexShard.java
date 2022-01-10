@@ -144,6 +144,7 @@ import org.elasticsearch.indices.recovery.RecoveryFailedException;
 import org.elasticsearch.indices.recovery.RecoverySettings;
 import org.elasticsearch.indices.recovery.RecoveryState;
 import org.elasticsearch.indices.recovery.RecoveryTarget;
+import org.elasticsearch.plugins.CodecServicePlugin;
 import org.elasticsearch.plugins.IndexStorePlugin;
 import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.repositories.Repository;
@@ -235,6 +236,7 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
     private final Object engineMutex = new Object(); // lock ordering: engineMutex -> mutex
     private final AtomicReference<Engine> currentEngineReference = new AtomicReference<>();
     final EngineFactory engineFactory;
+    final CodecServicePlugin.CodecServiceFactory codecServiceFactory;
 
     private final IndexingOperationListener indexingOperationListeners;
     private final Runnable globalCheckpointSyncer;
@@ -301,6 +303,7 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
         final MapperService mapperService,
         final SimilarityService similarityService,
         final @Nullable EngineFactory engineFactory,
+        final CodecServicePlugin.CodecServiceFactory codecServiceFactory,
         final IndexEventListener indexEventListener,
         final CheckedFunction<DirectoryReader, DirectoryReader, IOException> indexReaderWrapper,
         final ThreadPool threadPool,
@@ -317,11 +320,12 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
         assert shardRouting.initializing();
         this.shardRouting = shardRouting;
         final Settings settings = indexSettings.getSettings();
-        this.codecService = new CodecService(mapperService);
         this.warmer = warmer;
         this.similarityService = similarityService;
         Objects.requireNonNull(store, "Store must be provided to the index shard");
         this.engineFactory = Objects.requireNonNull(engineFactory);
+        this.codecServiceFactory = Objects.requireNonNull(codecServiceFactory);
+        this.codecService = codecServiceFactory.newCodecService(mapperService);
         this.snapshotCommitSupplier = Objects.requireNonNull(snapshotCommitSupplier);
         this.store = store;
         this.indexSortSupplier = indexSortSupplier;
@@ -3741,6 +3745,10 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
 
     EngineFactory getEngineFactory() {
         return engineFactory;
+    }
+
+    public CodecServicePlugin.CodecServiceFactory getCodecServiceFactory() {
+        return codecServiceFactory;
     }
 
     // for tests

@@ -70,6 +70,7 @@ import org.elasticsearch.indices.breaker.CircuitBreakerService;
 import org.elasticsearch.indices.cluster.IndicesClusterStateService;
 import org.elasticsearch.indices.fielddata.cache.IndicesFieldDataCache;
 import org.elasticsearch.indices.recovery.RecoveryState;
+import org.elasticsearch.plugins.CodecServicePlugin;
 import org.elasticsearch.plugins.IndexStorePlugin;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.search.aggregations.support.ValuesSourceRegistry;
@@ -117,6 +118,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
     private final NamedWriteableRegistry namedWriteableRegistry;
     private final SimilarityService similarityService;
     private final EngineFactory engineFactory;
+    private final CodecServicePlugin.CodecServiceFactory codecServiceFactory;
     private final IndexWarmer warmer;
     private volatile Map<Integer, IndexShard> shards = emptyMap();
     private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -153,6 +155,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         ShardStoreDeleter shardStoreDeleter,
         IndexAnalyzers indexAnalyzers,
         EngineFactory engineFactory,
+        CodecServicePlugin.CodecServiceFactory codecServiceFactory,
         CircuitBreakerService circuitBreakerService,
         BigArrays bigArrays,
         ThreadPool threadPool,
@@ -237,6 +240,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         this.directoryFactory = directoryFactory;
         this.recoveryStateFactory = recoveryStateFactory;
         this.engineFactory = Objects.requireNonNull(engineFactory);
+        this.codecServiceFactory = Objects.requireNonNull(codecServiceFactory);
         // initialize this last -- otherwise if the wrapper requires any other member to be non-null we fail with an NPE
         this.readerWrapper = wrapperFactory.apply(this);
         this.searchOperationListeners = Collections.unmodifiableList(searchOperationListeners);
@@ -496,6 +500,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
                 mapperService,
                 similarityService,
                 engineFactory,
+                codecServiceFactory,
                 eventListener,
                 readerWrapper,
                 threadPool,

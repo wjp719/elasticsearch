@@ -133,6 +133,7 @@ import org.elasticsearch.plugins.ActionPlugin;
 import org.elasticsearch.plugins.AnalysisPlugin;
 import org.elasticsearch.plugins.CircuitBreakerPlugin;
 import org.elasticsearch.plugins.ClusterPlugin;
+import org.elasticsearch.plugins.CodecServicePlugin;
 import org.elasticsearch.plugins.DiscoveryPlugin;
 import org.elasticsearch.plugins.EnginePlugin;
 import org.elasticsearch.plugins.IndexStorePlugin;
@@ -567,6 +568,15 @@ public class Node implements Closeable {
                 .map(plugin -> (Function<IndexSettings, Optional<EngineFactory>>) plugin::getEngineFactory)
                 .collect(Collectors.toList());
 
+            // collect codec service factory providers form plugins
+            final Collection<CodecServicePlugin> codecPlugins = pluginsService.filterPlugins(CodecServicePlugin.class);
+            final Collection<Function<IndexSettings, Optional<CodecServicePlugin.CodecServiceFactory>>> codecServiceFactoryProviders =
+                codecPlugins.stream()
+                    .map(
+                        plugin -> (Function<IndexSettings, Optional<CodecServicePlugin.CodecServiceFactory>>) plugin::getCodecServiceFactory
+                    )
+                    .collect(Collectors.toList());
+
             final Map<String, IndexStorePlugin.DirectoryFactory> indexStoreFactories = pluginsService.filterPlugins(IndexStorePlugin.class)
                 .stream()
                 .map(IndexStorePlugin::getDirectoryFactories)
@@ -619,6 +629,7 @@ public class Node implements Closeable {
                 client,
                 metaStateService,
                 engineFactoryProviders,
+                codecServiceFactoryProviders,
                 indexStoreFactories,
                 searchModule.getValuesSourceRegistry(),
                 recoveryStateFactories,

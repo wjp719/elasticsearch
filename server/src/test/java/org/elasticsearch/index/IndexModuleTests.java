@@ -48,6 +48,7 @@ import org.elasticsearch.index.analysis.AnalyzerScope;
 import org.elasticsearch.index.cache.query.DisabledQueryCache;
 import org.elasticsearch.index.cache.query.IndexQueryCache;
 import org.elasticsearch.index.cache.query.QueryCache;
+import org.elasticsearch.index.codec.CodecService;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.engine.InternalEngineFactory;
 import org.elasticsearch.index.engine.InternalEngineTests;
@@ -208,6 +209,7 @@ public class IndexModuleTests extends ESTestCase {
             indexSettings,
             emptyAnalysisRegistry,
             engineFactory,
+            CodecService::new,
             Collections.emptyMap(),
             () -> true,
             indexNameExpressionResolver,
@@ -233,6 +235,7 @@ public class IndexModuleTests extends ESTestCase {
             indexSettings,
             emptyAnalysisRegistry,
             new InternalEngineFactory(),
+            CodecService::new,
             indexStoreFactories,
             () -> true,
             indexNameExpressionResolver,
@@ -560,6 +563,7 @@ public class IndexModuleTests extends ESTestCase {
             indexSettings,
             emptyAnalysisRegistry,
             new InternalEngineFactory(),
+            CodecService::new,
             Collections.emptyMap(),
             () -> true,
             indexNameExpressionResolver,
@@ -595,6 +599,7 @@ public class IndexModuleTests extends ESTestCase {
             indexSettings,
             emptyAnalysisRegistry,
             new InternalEngineFactory(),
+            CodecService::new,
             Collections.emptyMap(),
             () -> true,
             indexNameExpressionResolver,

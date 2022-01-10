@@ -1776,6 +1776,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                     client,
                     new MetaStateService(nodeEnv, namedXContentRegistry),
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     emptyMap(),
                     null,
                     emptyMap(),

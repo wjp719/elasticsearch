@@ -80,6 +80,7 @@ import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AnalysisRegistry;
 import org.elasticsearch.index.bulk.stats.BulkStats;
 import org.elasticsearch.index.cache.request.ShardRequestCache;
+import org.elasticsearch.index.codec.CodecService;
 import org.elasticsearch.index.engine.CommitStats;
 import org.elasticsearch.index.engine.EngineFactory;
 import org.elasticsearch.index.engine.InternalEngineFactory;
@@ -117,6 +118,7 @@ import org.elasticsearch.indices.recovery.PeerRecoveryTargetService;
 import org.elasticsearch.indices.recovery.RecoveryState;
 import org.elasticsearch.indices.store.CompositeIndexFoldersDeletionListener;
 import org.elasticsearch.node.Node;
+import org.elasticsearch.plugins.CodecServicePlugin;
 import org.elasticsearch.plugins.IndexStorePlugin;
 import org.elasticsearch.plugins.PluginsService;
 import org.elasticsearch.repositories.RepositoriesService;
@@ -230,6 +232,7 @@ public class IndicesService extends AbstractLifecycleComponent
     private final IndicesQueryCache indicesQueryCache;
     private final MetaStateService metaStateService;
     private final Collection<Function<IndexSettings, Optional<EngineFactory>>> engineFactoryProviders;
+    private final Collection<Function<IndexSettings, Optional<CodecServicePlugin.CodecServiceFactory>>> codecServiceFactoryProviders;
     private final Map<String, IndexStorePlugin.DirectoryFactory> directoryFactories;
     private final Map<String, IndexStorePlugin.RecoveryStateFactory> recoveryStateFactories;
     private final IndexStorePlugin.IndexFoldersDeletionListener indexFoldersDeletionListeners;
@@ -275,6 +278,7 @@ public class IndicesService extends AbstractLifecycleComponent
         Client client,
         MetaStateService metaStateService,
         Collection<Function<IndexSettings, Optional<EngineFactory>>> engineFactoryProviders,
+        Collection<Function<IndexSettings, Optional<CodecServicePlugin.CodecServiceFactory>>> codecServiceFactoryProviders,
         Map<String, IndexStorePlugin.DirectoryFactory> directoryFactories,
         ValuesSourceRegistry valuesSourceRegistry,
         Map<String, IndexStorePlugin.RecoveryStateFactory> recoveryStateFactories,
@@ -326,6 +330,7 @@ public class IndicesService extends AbstractLifecycleComponent
         this.cacheCleaner = new CacheCleaner(indicesFieldDataCache, indicesRequestCache, logger, threadPool, this.cleanInterval);
         this.metaStateService = metaStateService;
         this.engineFactoryProviders = engineFactoryProviders;
+        this.codecServiceFactoryProviders = codecServiceFactoryProviders;
 
         // do not allow any plugin-provided index store type to conflict with a built-in type
         for (final String indexStoreType : directoryFactories.keySet()) {
@@ -707,6 +712,7 @@ public class IndicesService extends AbstractLifecycleComponent
             idxSettings,
             analysisRegistry,
             getEngineFactory(idxSettings),
+            getCodecServiceFactory(idxSettings),
             directoryFactories,
             () -> allowExpensiveQueries,
             indexNameExpressionResolver,
@@ -771,6 +777,30 @@ public class IndicesService extends AbstractLifecycleComponent
         }
     }
 
+    private CodecServicePlugin.CodecServiceFactory getCodecServiceFactory(final IndexSettings idxSettings) {
+        final List<Optional<CodecServicePlugin.CodecServiceFactory>> codecServiceFactories = codecServiceFactoryProviders.stream()
+            .map(codecServiceProvider -> codecServiceProvider.apply(idxSettings))
+            .filter(maybe -> Objects.requireNonNull(maybe).isPresent())
+            .collect(Collectors.toList());
+        if (codecServiceFactories.isEmpty()) {
+            return CodecService::new;
+        } else if (codecServiceFactories.size() == 1) {
+            assert codecServiceFactories.get(0).isPresent();
+            return codecServiceFactories.get(0).get();
+        } else {
+            final String message = String.format(
+                Locale.ROOT,
+                "multiple codec service factories provided for %s: %s",
+                idxSettings.getIndex(),
+                codecServiceFactories.stream().map(t -> {
+                    assert t.isPresent();
+                    return "[" + t.get().getClass().getName() + "]";
+                }).collect(Collectors.joining(","))
+            );
+            throw new IllegalStateException(message);
+        }
+    }
+
     /**
      * creates a new mapper service for the given index, in order to do administrative work like mapping updates.
      * This *should not* be used for document parsing. Doing so will result in an exception.
@@ -783,6 +813,7 @@ public class IndicesService extends AbstractLifecycleComponent
             idxSettings,
             analysisRegistry,
             getEngineFactory(idxSettings),
+            getCodecServiceFactory(idxSettings),
             directoryFactories,
             () -> allowExpensiveQueries,
             indexNameExpressionResolver,
